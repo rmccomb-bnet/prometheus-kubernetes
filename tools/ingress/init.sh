@@ -14,8 +14,8 @@ echo
 if [[ $deploy_nginx_ingress =~ ^([yY][eE][sS]|[yY])$ ]]; then
 
   #create a separate namespace for ingress controller
-  echo -e "${BLUE}Creating ${ORANGE}'nginx-ingress' ${BLUE}namespace."
-  kubectl create namespace nginx-ingress
+  echo -e "${BLUE}Creating ${ORANGE}'ingress-nginx' ${BLUE}namespace."
+  kubectl create namespace ingress-nginx
 
   echo
   echo -e "${BLUE}Is the RBAC plugin enabled?"
@@ -23,9 +23,16 @@ if [[ $deploy_nginx_ingress =~ ^([yY][eE][sS]|[yY])$ ]]; then
   read -p "[y/N]: " response
   if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]
   then
+      echo -e "${BLUE}Deploying  K8S Ingress Controller"
+      tput sgr0
       kubectl apply -f ./rbac.yaml
+      kubectl apply -f ./nginx-controller-with-rbac.yaml
   else
       echo -e "${GREEN}Skipping RBAC configuration"
+      echo
+      echo -e "${BLUE}Deploying  K8S Ingress Controller"
+      tput sgr0
+      kubectl apply -f ./nginx-controller-without-rbac.yaml
   fi
   tput sgr0
 
@@ -48,15 +55,9 @@ if [[ $deploy_nginx_ingress =~ ^([yY][eE][sS]|[yY])$ ]]; then
   BASIC_AUTH=$(cat ./auth | base64)
   sed -i -e 's/htpasswd/'"$BASIC_AUTH"'/g' ./basic-auth.secret.yaml
 
-  #deploy ingress controller
+  #create ingress
   echo
-  echo -e "${BLUE}Deploying  K8S Ingress Controller"
-  tput sgr0
-  kubectl apply -f ./nginx-controller.yaml
-
-  #ingress
-  echo
-  echo -e "${BLUE}Deploying  K8S Ingress Controller"
+  echo -e "${BLUE}Creating Ingress"
   tput sgr0
   kubectl apply -f ./basic-auth.secret.yaml
   kubectl apply -f ./ingress.yaml
